@@ -1,3 +1,5 @@
+-define(EMPTY_STRING, <<>>).
+
 % Searchd commands
 -define(SPHINX_COMMAND_SEARCH, 0).
 -define(SPHINX_COMMAND_EXCERPT, 1).
@@ -19,12 +21,16 @@
          port=3312,
          command,
          command_version,
+         index=?EMPTY_STRING,
          offset=0,
          limit=25,
+         min_id=0,
+         max_id=0,
          mode,
          sort,
-         sort_by="",
-         group_by="",
+         sort_by=?EMPTY_STRING,
+         group_by=?EMPTY_STRING,
          group_fun,
          group_sort,
-         query_string}).
+         query_string=?EMPTY_STRING,
+         ranker}).

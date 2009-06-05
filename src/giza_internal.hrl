@@ -19,6 +19,13 @@
 -define(SPHINX_ATTR_FLOAT, 5).
 -define(SPHINX_ATTR_MULTI, 1073741824).
 
+%% Ranker types
+-define(SPHINX_RANK_PROXIMITY_BM25, 0).
+-define(SPHINX_RANK_BM25, 1).
+-define(SPHINX_RANK_NONE, 2).
+-define(SPHINX_RANK_WORDCOUNT, 3).
+
+
 % Sorting
 -define(SPHINX_SORT_RELEVANCE, 0).
 -define(SPHINX_SORT_ATTR_DESC, 1).
@@ -34,8 +41,8 @@
 -define(SPHINX_GROUPBY_YEAR, 3).
 -define(SPHINX_GROUPBY_ATTR, 4).
 -define(SPHINX_GROUPBY_ATTRPAIR, 5).
--define(SPHINX_GROUP_SORT_ASC, "@group asc").
--define(SPHINX_GROUP_SORT_DESC, "@group desc").
+-define(SPHINX_GROUP_SORT_ASC, <<"@group asc">>).
+-define(SPHINX_GROUP_SORT_DESC, <<"@group desc">>).
 
 % Filtering
 -define(SPHINX_FILTER_VALUES, 0).
