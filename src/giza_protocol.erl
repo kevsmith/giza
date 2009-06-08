@@ -1,7 +1,7 @@
--module(giza_proto_util).
+-module(giza_protocol).
 
 -export([binary_to_number/2, binary_to_number/3]).
--export([convert_number/2, convert_string/1]).
+-export([convert_number/2, convert_string/1, convert_lp_string/1]).
 -export([write_number/3, write_string/2]).
 
 binary_to_number(Data, Size) ->
@@ -33,6 +33,15 @@ convert_string(<<>>) ->
   [convert_number(0, 32), <<>>];
 convert_string(Value) ->
   [convert_number(size(Value), 32), Value].
+
+convert_lp_string(RawString) ->
+  {<<Size:32>>, Rest} = erlang:split_binary(RawString, 4),
+  if
+    size(Rest) == Size ->
+      {Rest, <<>>};
+    true ->
+      erlang:split_binary(Rest, Size)
+  end.
 
 write_number(Sock, Value, Size) when is_number(Value),
                                      is_number(Size),

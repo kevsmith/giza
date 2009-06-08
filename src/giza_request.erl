@@ -15,7 +15,7 @@ send(Query) ->
           gen_tcp:recv(Sock, 4),
           {ok, Result} = gen_tcp:recv(Sock, 4),
           gen_tcp:close(Sock),
-          giza_proto_util:binary_to_number(Result, 32);
+          giza_protocol:binary_to_number(Result, 32);
         CommandError ->
          CommandError
       end;
@@ -26,7 +26,7 @@ send(Query) ->
 %% Internal functions
 write_query(Sock, Query) ->
   {Bytes, Size} =  query_to_bytes(Query),
-  giza_proto_util:write_number(Sock, Size, 32),
+  giza_protocol:write_number(Sock, Size, 32),
   gen_tcp:send(Sock, Bytes).
 
 query_to_bytes(Query) ->
@@ -77,15 +77,15 @@ query_to_commands(Query) ->
 commands_to_bytes([], FinalSize, Accum) ->
   {lists:reverse(Accum), FinalSize};
 commands_to_bytes([{Type, Value}|T], CurrentSize, Accum) when is_number(Type) ->
-  Bytes = giza_proto_util:convert_number(Value, Type),
+  Bytes = giza_protocol:convert_number(Value, Type),
   commands_to_bytes(T, CurrentSize + size(Bytes), [Bytes|Accum]);
 commands_to_bytes([{string, String}|T], CurrentSize, Accum) ->
-  [Size, String] = giza_proto_util:convert_string(String),
+  [Size, String] = giza_protocol:convert_string(String),
   commands_to_bytes(T, CurrentSize + size(Size) + size(String), [[Size, String]|Accum]).
 
 write_command(Sock, Query) ->
-  giza_proto_util:write_number(Sock, Query#giza_query.command, 16),
-  giza_proto_util:write_number(Sock, Query#giza_query.command_version, 16).
+  giza_protocol:write_number(Sock, Query#giza_query.command, 16),
+  giza_protocol:write_number(Sock, Query#giza_query.command_version, 16).
 
 connect(Query) ->
   case gen_tcp:connect(Query#giza_query.host,
@@ -95,7 +95,7 @@ connect(Query) ->
     {ok, Sock} ->
       case verify_version(Sock) of
         ok ->
-          giza_proto_util:write_number(Sock, ?SPHINX_MAJOR_PROTO, 32),
+          giza_protocol:write_number(Sock, ?SPHINX_MAJOR_PROTO, 32),
           {ok, Sock};
         VerifyError ->
           gen_tcp:close(Sock),
@@ -107,7 +107,7 @@ connect(Query) ->
 
 verify_version(Sock) ->
   {ok, RawVersion} = gen_tcp:recv(Sock, 4),
-  case giza_proto_util:binary_to_number(RawVersion, 32, true) of
+  case giza_protocol:binary_to_number(RawVersion, 32, true) of
     ?SPHINX_MAJOR_PROTO ->
       ok;
     BadVersion ->
