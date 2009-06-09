@@ -11,11 +11,7 @@ send(Query) ->
       case write_command(Sock, Query) of
         ok ->
           write_query(Sock, Query),
-          %% Throw away command version in response
-          gen_tcp:recv(Sock, 4),
-          {ok, Result} = gen_tcp:recv(Sock, 4),
-          gen_tcp:close(Sock),
-          giza_protocol:binary_to_number(Result, 32);
+          giza_response:parse(Sock);
         CommandError ->
          CommandError
       end;
