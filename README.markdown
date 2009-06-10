@@ -13,18 +13,19 @@ giza currently supports the following features:
 ## Examples
 
 1. Performing a simple search:
-
+<pre>
     Query = giza_query:new("users", "frederickson"),
     Results = giza_request:send(Query)
-
+</pre>
 2. Performing a paginated search:
-
+<pre>
     Q = giza_query:new("users", "frederickson"),
     Q1 = giza_query:offset(Q, 10),
     Results = giza_query:send(Query)
-
+</pre>
 3. Querying a non-default host:
-
+<pre>
     Q = giza_query:new("users", "frederickson"),
     Q1 = giza_query:host(Q, "search.somewhere"),
     Results = giza_query:send(Query)
+</pre>
