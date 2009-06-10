@@ -1,6 +1,6 @@
 ## Description
-giza is a client library for the Sphinx search engine (http://www.sphinxsearch.com). It uses the binary
-protocol spoken by the searchd daemon. giza doesn't use the MySQL protocol support built into Sphinx.
+giza is a client library for the Sphinx search engine (http://www.sphinxsearch.com). It speaks Sphinx's
+binary searchd protocol natively.
 
 giza currently supports the following features:
 
@@ -8,7 +8,11 @@ giza currently supports the following features:
 - Pagination via query limit and offset
 - Document id ranges via min_id and max_id
 
-*Note: All text is represented as Erlang binaries*
+Coming soon:
+
+- Excerpt support
+- Support for more query fields
+- Generic Sphinx test harness
 
 ## Examples
 
@@ -29,3 +33,5 @@ giza currently supports the following features:
     Q1 = giza_query:host(Q, "search.somewhere"),
     Results = giza_query:send(Query)
 </pre>
+
+Thanks to Nick Gerakines and the folks at EA for supporting giza!
