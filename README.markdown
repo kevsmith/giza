@@ -25,13 +25,13 @@ Coming soon:
 <pre>
     Q = giza_query:new("users", "frederickson"),
     Q1 = giza_query:offset(Q, 10),
-    Results = giza_query:send(Query)
+    Results = giza_request:send(Q1)
 </pre>
 3. Querying a non-default host:
 <pre>
     Q = giza_query:new("users", "frederickson"),
     Q1 = giza_query:host(Q, "search.somewhere"),
-    Results = giza_query:send(Query)
+    Results = giza_request:send(Q1)
 </pre>
 
 Thanks to Nick Gerakines and the folks at EA for supporting giza!
