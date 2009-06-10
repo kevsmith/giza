@@ -9,8 +9,11 @@
                            {?SPHINX_COMMAND_KEYWORDS, ?SPHINX_COMMAND_KEYWORDS_VER}]).
 
 -export([new/0, new/1, new/2]).
--export([query_string/1, query_string/2, command/1, command/2]).
--export([index/1, index/2]).
+-export([query_string/1, query_string/2]).
+-export([host/1, host/2, port/1, port/2]).
+-export([index/1, index/2, limit/1, limit/2]).
+-export([offset/1, offset/2, min_id/1, min_id/2]).
+-export([max_id/1, max_id/2]).
 
 new() ->
   new_with_defaults().
@@ -44,11 +47,48 @@ index(Query, Index) when is_list(Index) ->
 index(Query, Index) when is_binary(Index) ->
   Query#giza_query{index=Index}.
 
-command(Query) ->
-  Query#giza_query.command.
+host(Query) ->
+  Query#giza_query.host.
 
-command(Query, Command) when is_integer(Command) ->
-  set_query_field(command, Query, Command).
+host(Query, Host) when is_list(Host) ->
+  set_query_field(host, Query, Host).
+
+port(Query) ->
+  Query#giza_query.port.
+
+port(Query, Port) when is_number(Port) ->
+  set_query_field(port, Query, Port).
+
+limit(Query) ->
+  Query#giza_query.limit.
+
+limit(Query, Limit) when is_number(Limit) ->
+  set_query_field(limit, Query, Limit).
+
+offset(Query) ->
+  Query#giza_query.offset.
+
+offset(Query, Offset) ->
+  set_query_field(offset, Query, Offset).
+
+min_id(Query) ->
+  Query#giza_query.min_id.
+
+min_id(Query, MinId) ->
+  set_query_field(min_id, Query, MinId).
+
+max_id(Query) ->
+  Query#giza_query.max_id.
+
+max_id(Query, MaxId) ->
+  set_query_field(max_id, Query, MaxId).
+
+%% Not supported yet
+%% command(Query) ->
+%%   Query#giza_query.command.
+
+%% command(Query, Command) when is_integer(Command) ->
+%%   set_query_field(command, Query, Command).
 
 %%Internal functions
 new_with_defaults() ->
@@ -73,4 +113,16 @@ set_query_field(command, Query, Command) when Command >= ?SPHINX_COMMAND_SEARCH 
    Version ->
      Query#giza_query{command=Command,
                       command_version=Version}
- end.
+ end;
+set_query_field(host, Query, Host) ->
+  Query#giza_query{host=Host};
+set_query_field(port, Query, Port) ->
+  Query#giza_query{port=Port};
+set_query_field(limit, Query, Limit) ->
+  Query#giza_query{limit=Limit};
+set_query_field(min_id, Query, MinId) ->
+  Query#giza_query{min_id=MinId};
+set_query_field(max_id, Query, MaxId) ->
+  Query#giza_query{max_id=MaxId};
+set_query_field(offset, Query, Offset) ->
+  Query#giza_query{offset=Offset}.
