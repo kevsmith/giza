@@ -1,10 +1,12 @@
 -module(giza_protocol).
 
+-define(EPOCH_BASE, 62167219200).
+
 -export([binary_to_number/2, binary_to_number/3]).
 -export([convert_number/2, convert_string/1, convert_lp_string/1]).
 -export([write_number/3, write_string/2]).
 -export([read_number/2, read_float/2,  read_lp_string/1, read_lp_string_list/1]).
--export([map/2]).
+-export([read_timestamp/1, map/2]).
 
 binary_to_number(Data, Size) ->
   binary_to_number(Data, Size, false).
@@ -49,6 +51,10 @@ read_number(Sock, Size) ->
   {ok, N} = gen_tcp:recv(Sock, (Size div 8)),
   <<N1:Size>> = N,
   N1.
+
+read_timestamp(Sock) ->
+  EpochTimestamp = read_number(Sock, 32),
+  calendar:gregorian_seconds_to_datetime(EpochTimestamp + ?EPOCH_BASE).
 
 read_lp_string(Sock) ->
   Length = read_number(Sock, 32),

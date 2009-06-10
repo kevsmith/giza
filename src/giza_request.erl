@@ -11,7 +11,9 @@ send(Query) ->
       case write_command(Sock, Query) of
         ok ->
           write_query(Sock, Query),
-          giza_response:parse(Sock);
+          Results = giza_response:parse(Sock),
+          catch gen_tcp:close(Sock),
+          Results;
         CommandError ->
          CommandError
       end;

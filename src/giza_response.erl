@@ -10,7 +10,7 @@ parse(Sock) ->
   gen_tcp:recv(Sock, 8),
   case giza_protocol:read_number(Sock, 32) of
     ?SEARCHD_OK ->
-      parse_results(Sock);
+      {ok, parse_results(Sock)};
     _ ->
       {error, giza_protocol:read_lp_string(Sock)}
   end.
@@ -26,14 +26,12 @@ parse_results(Sock) ->
                 1 ->
                   64
               end,
-  io:format("IdBitSize: ~p~n", [IdBitSize]),
   read_matches(Sock, HitCount, IdBitSize,  Attrs, []).
 
 read_matches(_Sock, 0, _IdBitSize, _Attrs, Accum) ->
-  lists:usort(lists:reverse(Accum));
+  lists:reverse(Accum);
 read_matches(Sock, HitCount, IdBitSize, AttrDefs, Accum) ->
   DocId = giza_protocol:read_number(Sock, IdBitSize),
-  io:format("DocId: ~p~n", [DocId]),
   Weight = giza_protocol:read_number(Sock, 32),
   Attrs = [read_attr(A, Sock) || A <- AttrDefs],
   read_matches(Sock, HitCount - 1, IdBitSize, AttrDefs,
@@ -49,6 +47,8 @@ read_attr({Name, ?SPHINX_ATTR_MULTI}, Sock) ->
   Count = giza_protocol:read_number(Sock, 32),
   Values = read_multi_values(Count, Sock, []),
   {Name, Values};
+read_attr({Name, ?SPHINX_ATTR_TIMESTAMP}, Sock) ->
+  {Name, giza_protocol:read_timestamp(Sock)};
 read_attr({Name, _}, Sock) ->
   {Name, giza_protocol:read_number(Sock, 32)}.
 
