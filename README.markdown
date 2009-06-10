@@ -14,16 +14,16 @@ giza currently supports the following features:
 
 1. Performing a simple search:
 
-`Query = giza_query:new("users", "frederickson"),`
-`Results = giza_request:send(Query)`
+`Query = giza_query:new("users", "frederickson"),
+Results = giza_request:send(Query)`
 
 2. Performing a paginated search:
 
-`Q = giza_query:new("users", "frederickson"),`
-`Q1 = giza_query:offset(Q, 10),`
-`Results = giza_query:send(Query)`
+`Q = giza_query:new("users", "frederickson"),
+Q1 = giza_query:offset(Q, 10),
+Results = giza_query:send(Query)`
 
 3. Querying a non-default host:
-`Q = giza_query:new("users", "frederickson"),`
-`Q1 = giza_query:host(Q, "search.somewhere"),`
-`Results = giza_query:send(Query)`
+`Q = giza_query:new("users", "frederickson"),
+Q1 = giza_query:host(Q, "search.somewhere"),
+Results = giza_query:send(Query)`
