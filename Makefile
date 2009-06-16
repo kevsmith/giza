@@ -38,8 +38,7 @@ doc/*.html:
 			       "./src/giza_response.erl","./src/giza_protocol.erl"])' -noshell -s init stop
 	mv *.html erlang.png stylesheet.css edoc-info doc
 clean:
-	rm -f *.tgz *.tar.gz
-	rm -f erl_crash.dump
+	rm -f *.tgz *.tar.gz edoc-info *.html erlang.png erl_crash.dump
 	rm -rf $(PKGNAME)-$(VERSION)
 	rm -rf ebin
 	rm -rf doc

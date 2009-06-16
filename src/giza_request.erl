@@ -27,6 +27,9 @@
 
 -export([send/1]).
 
+%% @spec send(Query) -> Result
+%%       Query = any()
+%%       Result = [{number(), [any()]}]
 %% @doc Sends a giza query to a searchd server
 send(Query) ->
   case connect(Query) of

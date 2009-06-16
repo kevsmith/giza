@@ -26,15 +26,24 @@
 
 -export([to_timestamp/1, from_timestamp/1]).
 
+%% @spec to_timestamp(Now) -> Result
+%%       Now = {integer(), integer(), integer()}
+%%       Result = number()
 %% @doc Encode the tuple returned from erlang:now/0 into a Unix epoch timestamp
 to_timestamp({_, _, _}=Now) ->
   to_timestamp(calendar:now_to_universal_time(Now));
 
+%% @spec to_timestamp(DateTime) -> Result
+%%       DateTime = {{integer(), integer(), integer()}, {integer(), integer(), integer()}}
+%%       Result = number()
 %% @doc Encode an Erlang datetime tuple into a Unix epoch timestamp
 to_timestamp(DateTime) ->
   TS = calendar:datetime_to_gregorian_seconds(DateTime),
   TS - ?EPOCH_BASE.
 
+%% @spec from_timestamp(EpochTimestamp) -> Result
+%%       EpochTimestamp = number()
+%%       Result = {{integer(), integer(), integer()}, {integer(), integer(), integer()}}
 %% @doc Convert an Unix epoch timestamp into the equivalent Unix datetime tuple
 from_timestamp(EpochTimestamp) ->
   calendar:gregorian_seconds_to_datetime(EpochTimestamp + ?EPOCH_BASE).

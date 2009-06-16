@@ -37,91 +37,160 @@
 -export([offset/1, offset/2, min_id/1, min_id/2]).
 -export([max_id/1, max_id/2]).
 
+%% @spec new() -> Result
+%%       Result = any()
 %% @doc Create a new giza query pointing with default values
 new() ->
   new_with_defaults().
 
+%% @spec new(Host, Port) -> Result
+%%       Host = string()
+%%       Port = integer()
+%%       Result = any()
 %% @doc Create a new giza query pointing to the given host and port
 new(Host, Port) when is_list(Host),
                      is_integer(Port) ->
   R = new_with_defaults(),
   R#giza_query{host=Host, port=Port};
 
+%% @spec new(Index, QueryString) -> Result
+%%       Index = string()
+%%       QueryString = string()
+%%       Result = any()
 %% @doc Create a new giza query using the specified index name and query string
 new(Index, QueryString) when is_list(Index),
                              is_list(QueryString) ->
   R = new_with_defaults(),
   index(query_string(R, QueryString), Index).
 
+%% @spec new(QueryString) -> Result
+%%       QueryString = string()
+%%       Result = any()
 %% @doc Create a new giza query with the specified query string
 new(QueryString) when is_list(QueryString) ->
   R = new_with_defaults(),
   query_string(R, QueryString).
 
+%% @spec query_string(Query) -> Result
+%%       Query = any()
+%%       Result = binary()
 %% @doc Retrieve the current query string
 query_string(Query) ->
   Query#giza_query.query_string.
 
+%% @spec query_string(Query, NewQueryString) -> Result
+%%       Query = any()
+%%       NewQueryString = string()
+%%       Result = any()
 %% @doc Set the query string
 query_string(Query, NewQueryString) when is_list(NewQueryString) ->
   query_string(Query, list_to_binary(NewQueryString));
 query_string(Query, NewQueryString) when is_binary(NewQueryString) ->
   set_query_field(query_string, Query, NewQueryString).
 
+%% @spec index(Query) -> Result
+%%       Query = any()
+%%       Result = string()
 %% @doc Get the current search index name
 index(Query) ->
   Query#giza_query.index.
 
+%% @spec index(Query, Index) -> Result
+%%       Query = any()
+%%       Index = string()
+%%       Result = any()
 %% @doc Set the search index name
 index(Query, Index) when is_list(Index) ->
   index(Query, list_to_binary(Index));
 index(Query, Index) when is_binary(Index) ->
   Query#giza_query{index=Index}.
 
+%% @spec host(Query) -> Result
+%%       Query = any()
+%%       Result = string()
 %% @doc Get the current target host
 host(Query) ->
   Query#giza_query.host.
 
+%% @spec host(Query, Host) -> Result
+%%       Query = any()
+%%       Host = string()
+%%       Result = any()
 %% @doc Set the target host
 host(Query, Host) when is_list(Host) ->
   set_query_field(host, Query, Host).
 
+%% @spec port(Query) -> Result
+%%       Query = any()
+%%       Result = integer()
 %% @doc Get the current target port
 port(Query) ->
   Query#giza_query.port.
 
+%% @spec port(Query, Port) -> Result
+%%       Query = any()
+%%       Port = integer()
+%%       Result = any()
 %% @doc Set the current target port
 port(Query, Port) when is_number(Port) ->
   set_query_field(port, Query, Port).
 
+%% @spec limit(Query) -> Result
+%%       Query = any()
+%%       Result = integer()
 %% @doc Get the current query result limit
 limit(Query) ->
   Query#giza_query.limit.
 
+%% @spec limit(Query, Limit) -> Result
+%%       Query = any()
+%%       Limit = integer()
+%%       Result = any()
 %% @doc Set the query result limit
 limit(Query, Limit) when is_number(Limit) ->
   set_query_field(limit, Query, Limit).
 
+%% @spec offset(Query) -> Result
+%%       Query = any()
+%%       Result = integer()
 %% @doc Get the current offset
 offset(Query) ->
   Query#giza_query.offset.
 
+%% @spec offset(Query, Offset) -> Result
+%%       Query = any()
+%%       Offset = integer()
+%%       Result = any()
 %% @doc Set the query offset
 offset(Query, Offset) ->
   set_query_field(offset, Query, Offset).
 
+%% @spec min_id(Query) -> Result
+%%       Query = any()
+%%       Result = integer()
 %% @doc Get the minimum doc id limit
 min_id(Query) ->
   Query#giza_query.min_id.
 
+%% @spec min_id(Query, MinId) -> Result
+%%       Query = any()
+%%       MinId = integer()
+%%       Result = any()
 %% @doc Set the minimum doc id limit
 min_id(Query, MinId) ->
   set_query_field(min_id, Query, MinId).
 
+%% @spec max_id(Query) -> Result
+%%       Query = any()
+%%       Result = integer()
 %% @doc Get the maximum doc id limit
 max_id(Query) ->
   Query#giza_query.max_id.
 
+%% @spec max_id(Query, MaxId) -> Result
+%%       Query = any()
+%%       MinId = integer()
+%%       Result = any()
 %% @doc Set the maximum doc id limit
 max_id(Query, MaxId) ->
   set_query_field(max_id, Query, MaxId).
