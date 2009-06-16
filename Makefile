@@ -1,3 +1,5 @@
+PKGNAME=giza
+VERSION=0.1.0
 all: test
 
 ebin:
@@ -19,10 +21,16 @@ integration: compile
 	cd t;erl -make
 	prove t/*.integ
 
-package: compile
-	mkdir -p /tmp/giza;cp -R * /tmp/giza;rm -rf /tmp/giza/.git /tmp/giza/tests;tar czf giza.tar.gz -C /tmp giza
+package: clean
+	mkdir ebin
+	@mkdir $(PKGNAME)-$(VERSION)/ && cp -rf ebin Makefile README.markdown src t $(PKGNAME)-$(VERSION)
+	@COPYFILE_DISABLE=true tar zcf $(PKGNAME)-$(VERSION).tgz $(PKGNAME)-$(VERSION)
+	@rm -rf $(PKGNAME)-$(VERSION)/
+
+
 clean:
-	rm -f giza.tar.gz
+	rm -f *.tgz *.tar.gz
+	rm -rf $(PKGNAME)-$(VERSION)
 	rm -rf ebin
 	rm -f t/*.beam
 	rm -rf include
