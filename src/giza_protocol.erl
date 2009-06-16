@@ -22,17 +22,17 @@
 
 -author("Kevin A. Smith <kevin@hypotheticalabs.com>").
 
--define(EPOCH_BASE, 62167219200).
-
 -export([binary_to_number/2, binary_to_number/3]).
 -export([convert_number/2, convert_string/1, convert_lp_string/1]).
 -export([write_number/3, write_string/2]).
 -export([read_number/2, read_float/2,  read_lp_string/1, read_lp_string_list/1]).
--export([read_timestamp/1, map/2]).
+-export([map/2]).
 
+%% @doc Convert binary to number
 binary_to_number(Data, Size) ->
   binary_to_number(Data, Size, false).
 
+%% @doc Convert binary to number
 binary_to_number(Data, Size, IsBig) when is_binary(Data) ->
   Value = if
             IsBig =:= true ->
@@ -55,11 +55,13 @@ convert_number(Value, 32) ->
   <<V1:8, V2:8, V3:8, V4:8>> = <<Value:32>>,
   <<V1, V2, V3, V4>>.
 
+%% @doc Convert an Erlang binary string to a Sphinx string
 convert_string(<<>>) ->
   [convert_number(0, 32), <<>>];
 convert_string(Value) ->
   [convert_number(size(Value), 32), Value].
 
+%% @doc Convert a Sphinx string to an Erlang binary string
 convert_lp_string(RawString) ->
   {<<Size:32>>, Rest} = erlang:split_binary(RawString, 4),
   if
@@ -69,20 +71,19 @@ convert_lp_string(RawString) ->
       erlang:split_binary(Rest, Size)
   end.
 
+%% @doc Read number from a TCP/IP socket
 read_number(Sock, Size) ->
   {ok, N} = gen_tcp:recv(Sock, (Size div 8)),
   <<N1:Size>> = N,
   N1.
 
-read_timestamp(Sock) ->
-  EpochTimestamp = read_number(Sock, 32),
-  calendar:gregorian_seconds_to_datetime(EpochTimestamp + ?EPOCH_BASE).
-
+%% @doc Read a Sphinx string rom  a TCP/IP/Socket
 read_lp_string(Sock) ->
   Length = read_number(Sock, 32),
   {ok, String} = gen_tcp:recv(Sock, Length),
   String.
 
+%% @doc Map over an incoming data stream and process it
 map(Fun, Sock) ->
   Count = read_number(Sock, 32),
   do_map(Count, Fun, Sock, []).
@@ -92,6 +93,7 @@ do_map(0, _Fun, _Sock, Accum) ->
 do_map(Count, Fun, Sock, Accum) ->
   do_map(Count - 1, Fun, Sock, [Fun(Sock)|Accum]).
 
+%% @doc Read a list of Sphinx strings
 read_lp_string_list(Sock) ->
   Count = read_number(Sock, 32),
   read_lp_string_list(Count, Sock, []).
@@ -101,15 +103,18 @@ read_lp_string_list(0, _Sock, Accum) ->
 read_lp_string_list(Count, Sock, Accum) ->
   read_lp_string_list(Count - 1, Sock, [read_lp_string(Sock)|Accum]).
 
+%% @doc Read a float froma TCP/IP socket
 read_float(Sock, 32) ->
   {ok, Data} = gen_tcp:recv(Sock, 4),
   <<Value:32/float>> = Data,
   Value.
 
+%% @doc Write a number as a Sphinx encoded value to a TCP/IP socket
 write_number(Sock, Value, Size) when is_number(Value),
                                      is_number(Size),
                                      is_port(Sock) ->
   gen_tcp:send(Sock, convert_number(Value, Size)).
 
+%% @doc Write a string as a Sphinx encoded value to a TCP/IP socket
 write_string(Sock, String) when is_binary(String) ->
   gen_tcp:send(Sock, convert_string(String)).

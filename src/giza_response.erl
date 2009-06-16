@@ -18,6 +18,7 @@
 %% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 %% THE SOFTWARE.
 
+%% @hidden
 -module(giza_response).
 
 -author("Kevin A. Smith <kevin@hypotheticalabs.com>").
@@ -27,6 +28,7 @@
 
 -export([parse/1]).
 
+%% @doc Parses the response from searchd server
 parse(Sock) ->
   %% Ignore aggregate status, version, and response size
   gen_tcp:recv(Sock, 8),
@@ -36,6 +38,8 @@ parse(Sock) ->
     _ ->
       {error, giza_protocol:read_lp_string(Sock)}
   end.
+
+%% @hidden
 %% Internal functions
 parse_results(Sock) ->
   _Fields = giza_protocol:map(fun(S) -> giza_protocol:read_lp_string(S) end, Sock),

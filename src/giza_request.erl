@@ -27,6 +27,7 @@
 
 -export([send/1]).
 
+%% @doc Sends a giza query to a searchd server
 send(Query) ->
   case connect(Query) of
     {ok, Sock} ->

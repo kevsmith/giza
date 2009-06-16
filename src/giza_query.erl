@@ -37,71 +37,92 @@
 -export([offset/1, offset/2, min_id/1, min_id/2]).
 -export([max_id/1, max_id/2]).
 
+%% @doc Create a new giza query pointing with default values
 new() ->
   new_with_defaults().
 
+%% @doc Create a new giza query pointing to the given host and port
 new(Host, Port) when is_list(Host),
                      is_integer(Port) ->
   R = new_with_defaults(),
   R#giza_query{host=Host, port=Port};
+
+%% @doc Create a new giza query using the specified index name and query string
 new(Index, QueryString) when is_list(Index),
                              is_list(QueryString) ->
   R = new_with_defaults(),
   index(query_string(R, QueryString), Index).
 
+%% @doc Create a new giza query with the specified query string
 new(QueryString) when is_list(QueryString) ->
   R = new_with_defaults(),
   query_string(R, QueryString).
 
+%% @doc Retrieve the current query string
 query_string(Query) ->
   Query#giza_query.query_string.
 
+%% @doc Set the query string
 query_string(Query, NewQueryString) when is_list(NewQueryString) ->
   query_string(Query, list_to_binary(NewQueryString));
 query_string(Query, NewQueryString) when is_binary(NewQueryString) ->
   set_query_field(query_string, Query, NewQueryString).
 
+%% @doc Get the current search index name
 index(Query) ->
   Query#giza_query.index.
 
+%% @doc Set the search index name
 index(Query, Index) when is_list(Index) ->
   index(Query, list_to_binary(Index));
 index(Query, Index) when is_binary(Index) ->
   Query#giza_query{index=Index}.
 
+%% @doc Get the current target host
 host(Query) ->
   Query#giza_query.host.
 
+%% @doc Set the target host
 host(Query, Host) when is_list(Host) ->
   set_query_field(host, Query, Host).
 
+%% @doc Get the current target port
 port(Query) ->
   Query#giza_query.port.
 
+%% @doc Set the current target port
 port(Query, Port) when is_number(Port) ->
   set_query_field(port, Query, Port).
 
+%% @doc Get the current query result limit
 limit(Query) ->
   Query#giza_query.limit.
 
+%% @doc Set the query result limit
 limit(Query, Limit) when is_number(Limit) ->
   set_query_field(limit, Query, Limit).
 
+%% @doc Get the current offset
 offset(Query) ->
   Query#giza_query.offset.
 
+%% @doc Set the query offset
 offset(Query, Offset) ->
   set_query_field(offset, Query, Offset).
 
+%% @doc Get the minimum doc id limit
 min_id(Query) ->
   Query#giza_query.min_id.
 
+%% @doc Set the minimum doc id limit
 min_id(Query, MinId) ->
   set_query_field(min_id, Query, MinId).
 
+%% @doc Get the maximum doc id limit
 max_id(Query) ->
   Query#giza_query.max_id.
 
+%% @doc Set the maximum doc id limit
 max_id(Query, MaxId) ->
   set_query_field(max_id, Query, MaxId).
 
@@ -112,6 +133,7 @@ max_id(Query, MaxId) ->
 %% command(Query, Command) when is_integer(Command) ->
 %%   set_query_field(command, Query, Command).
 
+%% @hidden
 %%Internal functions
 new_with_defaults() ->
   set_query_field(command, #giza_query{mode=?SPHINX_MATCH_ALL,
