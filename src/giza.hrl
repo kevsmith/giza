@@ -53,4 +53,5 @@
          group_fun,
          group_sort,
          query_string=?EMPTY_STRING,
+         filters=[],
          ranker}).

@@ -26,7 +26,7 @@
 -export([convert_number/2, convert_string/1, convert_lp_string/1]).
 -export([write_number/3, write_string/2]).
 -export([read_number/2, read_float/2,  read_lp_string/1, read_lp_string_list/1]).
--export([map/2]).
+-export([read_timestamp/1, map/2]).
 
 %% @spec binary_to_number(Data, Size) -> Result
 %%       Data = binary()
@@ -165,3 +165,12 @@ write_number(Sock, Value, Size) when is_number(Value),
 %% @doc Write a string as a Sphinx encoded value to a TCP/IP socket
 write_string(Sock, String) when is_binary(String) ->
   gen_tcp:send(Sock, convert_string(String)).
+
+%% @spec read_timestamp(Sock) -> Result
+%%       Sock = port()
+%%       Result ={{integer(), integer(), integer()}, {integer(), integer(), integer()}}
+%% @doc Read an Unix epoch datetime from a socket and convert
+%%      it into an Erlang datetime tuple
+read_timestamp(Sock) ->
+  Number = read_number(Sock, 32),
+  giza_datetime:from_timestamp(Number).

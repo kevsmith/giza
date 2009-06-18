@@ -36,6 +36,7 @@
 -export([index/1, index/2, limit/1, limit/2]).
 -export([offset/1, offset/2, min_id/1, min_id/2]).
 -export([max_id/1, max_id/2]).
+-export([filters/1, add_filter/3, remove_filter/2]).
 
 %% @spec new() -> Result
 %%       Result = any()
@@ -195,6 +196,33 @@ max_id(Query) ->
 max_id(Query, MaxId) ->
   set_query_field(max_id, Query, MaxId).
 
+%% @spec filters(Query) -> Result
+%%       Query = any()
+%%       Result = list(tuple())
+%% @doc Retrieve currently set filters
+filters(Query) ->
+  Query#giza_query.filters.
+
+%% @spec add_filter(Query, Name, Values) -> Result
+%%       Query = any()
+%%       Name = list()
+%%       Values = list() | binary()
+%%       Result = any()
+%% @doc Add a new filter to a query
+add_filter(Query, Name, Values) when is_list(Name) ->
+  add_filter(Query, list_to_binary(Name), Values);
+add_filter(#giza_query{filters=Filters}=Query, Name, Values) when is_binary(Name) ->
+  Query#giza_query{filters=[{Name, Values}|Filters]}.
+
+%% @spec remove_filter(Query, Name) -> Result
+%%       Query = any()
+%%       Name = list() | binary()
+%%       Result = any()
+%% @doc Remove a filter from a query
+remove_filter(Query, Name) when is_list(Name) ->
+  remove_filter(Query, list_to_binary(Name));
+remove_filter(#giza_query{filters=Filters}=Query, Name) when is_binary(Name) ->
+  Query#giza_query{filters=proplists:delete(Name, Filters)}.
 %% Not supported yet
 %% command(Query) ->
 %%   Query#giza_query.command.

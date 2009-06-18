@@ -58,45 +58,45 @@ query_to_bytes(Query) ->
   commands_to_bytes(Commands, 0, []).
 
 query_to_commands(Query) ->
-  [{32, 1}, %% Number of queries
-   {32, Query#giza_query.offset},
-   {32, Query#giza_query.limit},
-   {32, Query#giza_query.mode},
-   {32, Query#giza_query.ranker},
-   {32, Query#giza_query.sort},
-   {string, Query#giza_query.sort_by},
-   {string, Query#giza_query.query_string},
-   %% query weights
-   {32, 0},
-   {string, Query#giza_query.index},
-   {32, 0},
-   {32, Query#giza_query.min_id},
-   {32, Query#giza_query.max_id},
-   %% Filter count
-   {32, 0},
-   {32, Query#giza_query.group_fun},
-   {string, Query#giza_query.group_by},
-   %% Max matches
-   {32, 1000},
-   {string, Query#giza_query.group_sort},
-   %% Cutoff
-   {32, 0},
-   %% Retry count
-   {32, 5},
-   %% Retry wait
-   {32, 5},
-   %% Group distinct
-   {32, 0},
-   %% Disable geo searching
-   {32, 0},
-   %% Index weights
-   {32, 0},
-   %% Max query time -- essentially unlimited
-   {32, 0},
-   %% Field weights
-   {32, 0},
-   %% Comment
-   {string, ?EMPTY_STRING}].
+  lists:flatten([{32, 1}, %% Number of queries
+                 {32, Query#giza_query.offset},
+                 {32, Query#giza_query.limit},
+                 {32, Query#giza_query.mode},
+                 {32, Query#giza_query.ranker},
+                 {32, Query#giza_query.sort},
+                 {string, Query#giza_query.sort_by},
+                 {string, Query#giza_query.query_string},
+                 %% query weights
+                 {32, 0},
+                 {string, Query#giza_query.index},
+                 {32, 0},
+                 {32, Query#giza_query.min_id},
+                 {32, Query#giza_query.max_id},
+                 %% Filters
+                 process_filters(Query),
+                 {32, Query#giza_query.group_fun},
+                 {string, Query#giza_query.group_by},
+                 %% Max matches
+                 {32, 1000},
+                 {string, Query#giza_query.group_sort},
+                 %% Cutoff
+                 {32, 0},
+                 %% Retry count
+                 {32, 5},
+                 %% Retry wait
+                 {32, 5},
+                 %% Group distinct
+                 {32, 0},
+                 %% Disable geo searching
+                 {32, 0},
+                 %% Index weights
+                 {32, 0},
+                 %% Max query time -- essentially unlimited
+                 {32, 0},
+                 %% Field weights
+                 {32, 0},
+                 %% Comment
+                 {string, ?EMPTY_STRING}]).
 
 commands_to_bytes([], FinalSize, Accum) ->
   {lists:reverse(Accum), FinalSize};
@@ -137,3 +137,14 @@ verify_version(Sock) ->
     BadVersion ->
       {error, {bad_version, BadVersion}}
   end.
+
+process_filters(#giza_query{filters=[]}=_Query) ->
+  [{32, 0}];
+process_filters(#giza_query{filters=[{Name, Values}]}=_Query) ->
+  lists:flatten([{32, 1},
+                 {string, Name},
+                 {32, ?SPHINX_FILTER_VALUES},
+                 {32, length(Values)},
+                 lists:map(fun(V) ->
+                               [{32, V},
+                                {32, 0}] end, Values)]).
