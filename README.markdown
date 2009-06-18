@@ -33,5 +33,11 @@ Coming soon:
     Q1 = giza_query:host(Q, "search.somewhere"),
     Results = giza_request:send(Q1)
 </pre>
+4. Using giza's attribute filtering (Inclusive only and numeric support right now):
+<pre>
+    Q = giza_query:new("users", "frederickson"),
+    Q1 = giza_query:add_filter(Q, "user_type", [1,3,5]),
+    Results = giza_request:send(Q1)
+</pre>
 
 Thanks to Nick Gerakines and the folks at EA for supporting giza!
