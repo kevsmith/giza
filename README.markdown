@@ -33,10 +33,17 @@ Coming soon:
     Q1 = giza_query:host(Q, "search.somewhere"),
     Results = giza_request:send(Q1)
 </pre>
-4. Using giza's attribute filtering (Inclusive only and numeric support right now):
+4. Using giza's attribute filtering:
 <pre>
     Q = giza_query:new("users", "frederickson"),
+    %% This is an inclusionary filter by default
     Q1 = giza_query:add_filter(Q, "user_type", [1,3,5]),
+    Results = giza_request:send(Q1)
+</pre>
+<pre>
+    Q = giza_query:new("users", "frederickson"),
+    %% Filter with explicit exclude info (exclude == true)
+    Q1 = giza_query:add_filter(Q, "user_type", true, [1,3,5]),
     Results = giza_request:send(Q1)
 </pre>
 

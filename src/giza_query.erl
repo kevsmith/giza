@@ -36,7 +36,8 @@
 -export([index/1, index/2, limit/1, limit/2]).
 -export([offset/1, offset/2, min_id/1, min_id/2]).
 -export([max_id/1, max_id/2]).
--export([filters/1, add_filter/3, remove_filter/2]).
+-export([filters/1, add_filter/3, add_filter/4, remove_filter/2]).
+-export([to_bytes/1]).
 
 %% @spec new() -> Result
 %%       Result = any()
@@ -205,14 +206,25 @@ filters(Query) ->
 
 %% @spec add_filter(Query, Name, Values) -> Result
 %%       Query = any()
+%%       Name = list() | binary()
+%%       Values = list()
+%%       Result = any()
+%% @doc Adds a inclusionary filter
+add_filter(Query, Name, Values) ->
+  add_filter(Query, Name, false, Values).
+%% @spec add_filter(Query, Name, Type, Values) -> Result
+%%       Query = any()
 %%       Name = list()
-%%       Values = list() | binary()
+%%       Exclude = true | false
+%%       Values = list()
 %%       Result = any()
 %% @doc Add a new filter to a query
-add_filter(Query, Name, Values) when is_list(Name) ->
-  add_filter(Query, list_to_binary(Name), Values);
-add_filter(#giza_query{filters=Filters}=Query, Name, Values) when is_binary(Name) ->
-  Query#giza_query{filters=[{Name, Values}|Filters]}.
+add_filter(Query, Name, Exclude, Values) when is_list(Name) ->
+  add_filter(Query, list_to_binary(Name), Exclude, Values);
+add_filter(#giza_query{filters=Filters}=Query, Name, Exclude, Values) when is_binary(Name),
+                                                                           Exclude =:= true orelse
+                                                                           Exclude =:= false ->
+  Query#giza_query{filters=[{Name, {Exclude, Values}}|Filters]}.
 
 %% @spec remove_filter(Query, Name) -> Result
 %%       Query = any()
@@ -223,6 +235,11 @@ remove_filter(Query, Name) when is_list(Name) ->
   remove_filter(Query, list_to_binary(Name));
 remove_filter(#giza_query{filters=Filters}=Query, Name) when is_binary(Name) ->
   Query#giza_query{filters=proplists:delete(Name, Filters)}.
+
+to_bytes(Query) ->
+  Commands = query_to_commands(Query),
+  commands_to_bytes(Commands, 0, []).
+
 %% Not supported yet
 %% command(Query) ->
 %%   Query#giza_query.command.
@@ -267,3 +284,77 @@ set_query_field(max_id, Query, MaxId) ->
   Query#giza_query{max_id=MaxId};
 set_query_field(offset, Query, Offset) ->
   Query#giza_query{offset=Offset}.
+
+query_to_commands(Query) ->
+  lists:flatten([{32, 1}, %% Number of queries
+                 {32, Query#giza_query.offset},
+                 {32, Query#giza_query.limit},
+                 {32, Query#giza_query.mode},
+                 {32, Query#giza_query.ranker},
+                 {32, Query#giza_query.sort},
+                 {string, Query#giza_query.sort_by},
+                 {string, Query#giza_query.query_string},
+                 %% query weights
+                 {32, 0},
+                 {string, Query#giza_query.index},
+                 {32, 0},
+                 {32, Query#giza_query.min_id},
+                 {32, Query#giza_query.max_id},
+                 %% Filters
+                 process_filters(Query),
+                 {32, Query#giza_query.group_fun},
+                 {string, Query#giza_query.group_by},
+                 %% Max matches
+                 {32, 1000},
+                 {string, Query#giza_query.group_sort},
+                 %% Cutoff
+                 {32, 0},
+                 %% Retry count
+                 {32, 5},
+                 %% Retry wait
+                 {32, 5},
+                 %% Group distinct
+                 {32, 0},
+                 %% Disable geo searching
+                 {32, 0},
+                 %% Index weights
+                 {32, 0},
+                 %% Max query time -- essentially unlimited
+                 {32, 0},
+                 %% Field weights
+                 {32, 0},
+                 %% Comment
+                 {string, ?EMPTY_STRING}]).
+
+commands_to_bytes([], FinalSize, Accum) ->
+  {lists:reverse(Accum), FinalSize};
+commands_to_bytes([{Type, Value}|T], CurrentSize, Accum) when is_number(Type) ->
+  Bytes = giza_protocol:convert_number(Value, Type),
+  commands_to_bytes(T, CurrentSize + size(Bytes), [Bytes|Accum]);
+commands_to_bytes([{string, String}|T], CurrentSize, Accum) ->
+  [Size, String] = giza_protocol:convert_string(String),
+  commands_to_bytes(T, CurrentSize + size(Size) + size(String), [[Size, String]|Accum]).
+
+process_filters(#giza_query{filters=[]}=_Query) ->
+  [{32, 0}];
+process_filters(#giza_query{filters=Filters}=_Query) ->
+  encode_filters(Filters, []).
+encode_filters([], []) ->
+  [{32, 0}];
+encode_filters([], Accum) ->
+  lists:flatten([{32, length(Accum)},
+                 lists:reverse(Accum)]);
+encode_filters([{Name, {Exclude, Values}}|T], Accum) ->
+  EV = if
+         Exclude =:= true ->
+                1;
+         Exclude =:= false ->
+           0
+       end,
+  EncodedFilter = [{string, Name},
+                   {32, ?SPHINX_FILTER_VALUES},
+                   {32, length(Values)},
+                   lists:map(fun(V) ->
+                                 {32, V} end, Values),
+                   {32, EV}],
+  encode_filters(T, [EncodedFilter|Accum]).

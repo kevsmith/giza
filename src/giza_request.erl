@@ -49,63 +49,9 @@ send(Query) ->
 
 %% Internal functions
 write_query(Sock, Query) ->
-  {Bytes, Size} =  query_to_bytes(Query),
+  {Bytes, Size} =  giza_query:to_bytes(Query),
   giza_protocol:write_number(Sock, Size, 32),
   gen_tcp:send(Sock, Bytes).
-
-query_to_bytes(Query) ->
-  Commands = query_to_commands(Query),
-  commands_to_bytes(Commands, 0, []).
-
-query_to_commands(Query) ->
-  lists:flatten([{32, 1}, %% Number of queries
-                 {32, Query#giza_query.offset},
-                 {32, Query#giza_query.limit},
-                 {32, Query#giza_query.mode},
-                 {32, Query#giza_query.ranker},
-                 {32, Query#giza_query.sort},
-                 {string, Query#giza_query.sort_by},
-                 {string, Query#giza_query.query_string},
-                 %% query weights
-                 {32, 0},
-                 {string, Query#giza_query.index},
-                 {32, 0},
-                 {32, Query#giza_query.min_id},
-                 {32, Query#giza_query.max_id},
-                 %% Filters
-                 process_filters(Query),
-                 {32, Query#giza_query.group_fun},
-                 {string, Query#giza_query.group_by},
-                 %% Max matches
-                 {32, 1000},
-                 {string, Query#giza_query.group_sort},
-                 %% Cutoff
-                 {32, 0},
-                 %% Retry count
-                 {32, 5},
-                 %% Retry wait
-                 {32, 5},
-                 %% Group distinct
-                 {32, 0},
-                 %% Disable geo searching
-                 {32, 0},
-                 %% Index weights
-                 {32, 0},
-                 %% Max query time -- essentially unlimited
-                 {32, 0},
-                 %% Field weights
-                 {32, 0},
-                 %% Comment
-                 {string, ?EMPTY_STRING}]).
-
-commands_to_bytes([], FinalSize, Accum) ->
-  {lists:reverse(Accum), FinalSize};
-commands_to_bytes([{Type, Value}|T], CurrentSize, Accum) when is_number(Type) ->
-  Bytes = giza_protocol:convert_number(Value, Type),
-  commands_to_bytes(T, CurrentSize + size(Bytes), [Bytes|Accum]);
-commands_to_bytes([{string, String}|T], CurrentSize, Accum) ->
-  [Size, String] = giza_protocol:convert_string(String),
-  commands_to_bytes(T, CurrentSize + size(Size) + size(String), [[Size, String]|Accum]).
 
 write_command(Sock, Query) ->
   giza_protocol:write_number(Sock, Query#giza_query.command, 16),
@@ -137,14 +83,3 @@ verify_version(Sock) ->
     BadVersion ->
       {error, {bad_version, BadVersion}}
   end.
-
-process_filters(#giza_query{filters=[]}=_Query) ->
-  [{32, 0}];
-process_filters(#giza_query{filters=[{Name, Values}]}=_Query) ->
-  lists:flatten([{32, 1},
-                 {string, Name},
-                 {32, ?SPHINX_FILTER_VALUES},
-                 {32, length(Values)},
-                 lists:map(fun(V) ->
-                               [{32, V},
-                                {32, 0}] end, Values)]).

@@ -3,7 +3,7 @@
 -export([start/0]).
 
 start() ->
-  etap:plan(17),
+  etap:plan(18),
   Q = giza_query:new(),
   etap:is("localhost", giza_query:host(Q), "Can get host from giza_query"),
   Q1 = giza_query:host(Q, "search.foo.com"),
@@ -27,8 +27,10 @@ start() ->
   Q7 = giza_query:max_id(Q6, 10),
   etap:is(10, giza_query:max_id(Q7), "Can set max id from giza_query"),
   etap:is([], giza_query:filters(Q7), "Filters defaults to empty list"),
-  Q8 = giza_query:add_filter(Q7, "wibble", [23,17]),
-  etap:is([{<<"wibble">>, [23,17]}], giza_query:filters(Q8), "Adding filters works"),
+  Q8 = giza_query:add_filter(Q7, "wibble", true, [23,17]),
+  etap:is([{<<"wibble">>, {true, [23,17]}}], giza_query:filters(Q8), "Adding filters works"),
   Q9 = giza_query:remove_filter(Q8, "wibble"),
   etap:is([], giza_query:filters(Q9), "Deleting filters works"),
+  Q10 = giza_query:add_filter(Q9, "wibble", [23,17]),
+  etap:is([{<<"wibble">>, {false, [23,17]}}], giza_query:filters(Q10), "Adding defaulted inclusionary filter works"),
   etap:end_tests().
