@@ -25,11 +25,6 @@
 -include("giza.hrl").
 -include("giza_internal.hrl").
 
--define(COMMAND_VERSIONS, [{?SPHINX_COMMAND_SEARCH, ?SPHINX_COMMAND_SEARCH_VER},
-                           {?SPHINX_COMMAND_EXCERPT, ?SPHINX_COMMAND_EXCERPT_VER},
-                           {?SPHINX_COMMAND_UPDATE, ?SPHINX_COMMAND_UPDATE_VER},
-                           {?SPHINX_COMMAND_KEYWORDS, ?SPHINX_COMMAND_KEYWORDS_VER}]).
-
 -export([new/0, new/1, new/2]).
 -export([query_string/1, query_string/2]).
 -export([host/1, host/2, port/1, port/2]).
@@ -238,24 +233,16 @@ remove_filter(#giza_query{filters=Filters}=Query, Name) when is_binary(Name) ->
 
 to_bytes(Query) ->
   Commands = query_to_commands(Query),
-  commands_to_bytes(Commands, 0, []).
-
-%% Not supported yet
-%% command(Query) ->
-%%   Query#giza_query.command.
-
-%% command(Query, Command) when is_integer(Command) ->
-%%   set_query_field(command, Query, Command).
+  giza_protocol:commands_to_bytes(Commands).
 
 %% @hidden
 %%Internal functions
 new_with_defaults() ->
-  set_query_field(command, #giza_query{mode=?SPHINX_MATCH_ALL,
-                                       sort=?SPHINX_SORT_RELEVANCE,
-                                       group_fun=?SPHINX_GROUPBY_DAY,
-                                       group_sort=?SPHINX_GROUP_SORT_DESC,
-                                       ranker=?SPHINX_RANK_PROXIMITY_BM25},
-                  ?SPHINX_COMMAND_SEARCH).
+  #giza_query{mode=?SPHINX_MATCH_ALL,
+              sort=?SPHINX_SORT_RELEVANCE,
+              group_fun=?SPHINX_GROUPBY_DAY,
+              group_sort=?SPHINX_GROUP_SORT_DESC,
+              ranker=?SPHINX_RANK_PROXIMITY_BM25}.
 
 set_query_field(mode, Query, MatchMode) ->
   Query#giza_query{mode=MatchMode};
@@ -263,15 +250,6 @@ set_query_field(sort_by, Query, SortBy) ->
   Query#giza_query{sort_by=SortBy};
 set_query_field(query_string, Query, QueryString) ->
   Query#giza_query{query_string=QueryString};
-set_query_field(command, Query, Command) when Command >= ?SPHINX_COMMAND_SEARCH andalso
-                                              Command =< ?SPHINX_COMMAND_KEYWORDS ->
- case proplists:get_value(Command, ?COMMAND_VERSIONS) of
-   undefined ->
-     throw({error, {unknown_command, Command}});
-   Version ->
-     Query#giza_query{command=Command,
-                      command_version=Version}
- end;
 set_query_field(host, Query, Host) ->
   Query#giza_query{host=Host};
 set_query_field(port, Query, Port) ->
@@ -325,15 +303,6 @@ query_to_commands(Query) ->
                  {32, 0},
                  %% Comment
                  {string, ?EMPTY_STRING}]).
-
-commands_to_bytes([], FinalSize, Accum) ->
-  {lists:reverse(Accum), FinalSize};
-commands_to_bytes([{Type, Value}|T], CurrentSize, Accum) when is_number(Type) ->
-  Bytes = giza_protocol:convert_number(Value, Type),
-  commands_to_bytes(T, CurrentSize + size(Bytes), [Bytes|Accum]);
-commands_to_bytes([{string, String}|T], CurrentSize, Accum) ->
-  [Size, String] = giza_protocol:convert_string(String),
-  commands_to_bytes(T, CurrentSize + size(Size) + size(String), [[Size, String]|Accum]).
 
 process_filters(#giza_query{filters=[]}=_Query) ->
   [{32, 0}];

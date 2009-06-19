@@ -1,7 +1,7 @@
 -module(giza_t_001).
 
--include("giza_internal.hrl").
 -include("giza.hrl").
+-include("giza_internal.hrl").
 
 -export([start/0]).
 

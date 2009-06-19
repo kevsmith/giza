@@ -18,12 +18,8 @@
 %% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 %% THE SOFTWARE.
 
-% Protocol and command versions
+% Protocol version
 -define(SPHINX_MAJOR_PROTO, 1).
--define(SPHINX_COMMAND_SEARCH_VER, 275).
--define(SPHINX_COMMAND_EXCERPT_VER, 256).
--define(SPHINX_COMMAND_UPDATE_VER, 257).
--define(SPHINX_COMMAND_KEYWORDS_VER, 256).
 
 % Searchd response codes
 -define(SEARCHD_OK, 0).

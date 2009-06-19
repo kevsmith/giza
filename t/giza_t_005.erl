@@ -1,0 +1,35 @@
+-module(giza_t_005).
+
+-export([start/0]).
+
+start() ->
+  etap:plan(9),
+  Update = giza_update:new("foo"),
+  etap:is("localhost", giza_update:host(Update), "Can get host"),
+  etap:is(3312, giza_update:port(Update), "Can get port"),
+  etap:is([], giza_update:fields(Update), "Update fields default to empty list"),
+  U1 = giza_update:add_field(Update, "wibble"),
+  etap:is([<<"wibble">>], giza_update:fields(U1), "Can add fields to a pending update"),
+  U2 = giza_update:remove_field(Update, "wibble"),
+  etap:is([], giza_update:fields(U2), "Can remove fields to a pending update"),
+  U3 = giza_update:add_field(U2, "wibble"),
+  U4 = giza_update:add_doc(U3, 123, [777]),
+  etap:is([{123, [777]}], giza_update:docs(U4), "Can get set of pending doc updates"),
+  U5 = giza_update:remove_field(U4, "wibble"),
+  etap:is([], giza_update:docs(U5), "Removing a field removes pending updates for that field"),
+  U6 = giza_update:add_fields(U5, ["foo", "bar", "baz"]),
+  U7 = giza_update:add_doc(U6, 123, [1,1,1]),
+  U8 = giza_update:add_doc(U7, 456, [2,2,2]),
+  U9 = giza_update:add_doc(U8, 789, [3,3,3]),
+  U10 = giza_update:remove_field(U9, "bar"),
+  etap:is([{123, [1,1]},
+           {456, [2,2]},
+           {789, [3,3]}], giza_update:docs(U10), "Removing one field leaves the rest in place"),
+  U11 = giza_update:new("foo"),
+  U12 = giza_update:add_fields(U11, ["foo", "bar", "baz"]),
+  U13 = giza_update:add_doc(U12, 123, [1, 11, 111]),
+  U14 = giza_update:add_doc(U13, 456, [2, 22, 222]),
+  U15 = giza_update:remove_field(U14, "baz"),
+  etap:is([{123, [1, 11]},
+           {456, [2, 22]}], giza_update:docs(U15), "Checking field removal with unique update values"),
+  etap:end_tests().

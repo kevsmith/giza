@@ -20,11 +20,18 @@
 
 -define(EMPTY_STRING, <<>>).
 
-% Searchd commands
+% Searchd commands and versions
 -define(SPHINX_COMMAND_SEARCH, 0).
+-define(SPHINX_COMMAND_SEARCH_VER, 275).
+
 -define(SPHINX_COMMAND_EXCERPT, 1).
+-define(SPHINX_COMMAND_EXCERPT_VER, 256).
+
 -define(SPHINX_COMMAND_UPDATE, 2).
+-define(SPHINX_COMMAND_UPDATE_VER, 257).
+
 -define(SPHINX_COMMAND_KEYWORDS, 3).
+-define(SPHINX_COMMAND_KEYWORDS_VER, 256).
 
 % Querying
 -define(SPHINX_MATCH_ALL, 0).
@@ -39,8 +46,8 @@
 -record(giza_query,
         {host="localhost",
          port=3312,
-         command,
-         command_version,
+         command=?SPHINX_COMMAND_SEARCH,
+         command_version=?SPHINX_COMMAND_SEARCH_VER,
          index=?EMPTY_STRING,
          offset=0,
          limit=25,
@@ -55,3 +62,12 @@
          query_string=?EMPTY_STRING,
          filters=[],
          ranker}).
+
+-record(giza_update,
+        {host="localhost",
+         port=3312,
+         index=?EMPTY_STRING,
+         command=?SPHINX_COMMAND_UPDATE,
+         command_version,
+         fields=[],
+         updates=[]}).

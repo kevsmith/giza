@@ -27,6 +27,7 @@
 -export([write_number/3, write_string/2]).
 -export([read_number/2, read_float/2,  read_lp_string/1, read_lp_string_list/1]).
 -export([read_timestamp/1, map/2]).
+-export([commands_to_bytes/1]).
 
 %% @spec binary_to_number(Data, Size) -> Result
 %%       Data = binary()
@@ -174,3 +175,19 @@ write_string(Sock, String) when is_binary(String) ->
 read_timestamp(Sock) ->
   Number = read_number(Sock, 32),
   giza_datetime:from_timestamp(Number).
+
+%% @spec commands_to_bytes(Commands) -> Result
+%%       Commands = list({atom, any()} | {atom, any(), integer()})
+%%       Result = {list(), number()}
+%% @doc Converts a set of commands to their corresponding byte encodings
+commands_to_bytes(Commands) when is_list(Commands) ->
+  commands_to_bytes(Commands, 0, []).
+
+commands_to_bytes([], FinalSize, Accum) ->
+  {lists:reverse(Accum), FinalSize};
+commands_to_bytes([{Type, Value}|T], CurrentSize, Accum) when is_number(Type) ->
+  Bytes = convert_number(Value, Type),
+  commands_to_bytes(T, CurrentSize + size(Bytes), [Bytes|Accum]);
+commands_to_bytes([{string, String}|T], CurrentSize, Accum) ->
+  [Size, String] = convert_string(String),
+  commands_to_bytes(T, CurrentSize + size(Size) + size(String), [[Size, String]|Accum]).
