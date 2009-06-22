@@ -5,6 +5,8 @@ binary searchd protocol natively.
 giza currently supports the following features:
 
 - Full text (Unicode) searching
+- Attribute filters (numeric values only)
+- Index updates
 - Pagination via query limit and offset
 - Document id ranges via min_id and max_id
 
