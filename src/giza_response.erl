@@ -26,10 +26,10 @@
 -include("giza.hrl").
 -include("giza_internal.hrl").
 
--export([parse/1]).
+-export([parse_query/1, parse_update/1]).
 
 %% @doc Parses the response from searchd server
-parse(Sock) ->
+parse_query(Sock) ->
   %% Ignore aggregate status, version, and response size
   gen_tcp:recv(Sock, 8),
   case giza_protocol:read_number(Sock, 32) of
@@ -38,6 +38,9 @@ parse(Sock) ->
     _ ->
       {error, giza_protocol:read_lp_string(Sock)}
   end.
+
+parse_update(Sock) ->
+  giza_protocol:read_number(Sock, 32).
 
 %% @hidden
 %% Internal functions

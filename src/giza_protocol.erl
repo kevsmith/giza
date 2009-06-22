@@ -64,11 +64,11 @@ convert_number(0, 16) ->
 convert_number(0, 32) ->
   <<0, 0, 0, 0>>;
 convert_number(Value, 16) ->
-  <<V1:8, V2:8>> = <<Value:16>>,
-  <<V1, V2>>;
+  <<Value:16>>;
 convert_number(Value, 32) ->
-  <<V1:8, V2:8, V3:8, V4:8>> = <<Value:32>>,
-  <<V1, V2, V3, V4>>.
+  <<Value:32>>;
+convert_number(Value, 64) ->
+  <<Value:64>>.
 
 %% @spec convert_string(String) -> Result
 %%       String = binary()
@@ -185,9 +185,11 @@ commands_to_bytes(Commands) when is_list(Commands) ->
 
 commands_to_bytes([], FinalSize, Accum) ->
   {lists:reverse(Accum), FinalSize};
-commands_to_bytes([{Type, Value}|T], CurrentSize, Accum) when is_number(Type) ->
-  Bytes = convert_number(Value, Type),
+commands_to_bytes([{Size, Value}|T], CurrentSize, Accum) when is_number(Size) ->
+  Bytes = convert_number(Value, Size),
   commands_to_bytes(T, CurrentSize + size(Bytes), [Bytes|Accum]);
+commands_to_bytes([{string, String}|T], CurrentSize, Accum) when is_list(String) ->
+  commands_to_bytes([{string, list_to_binary(String)}|T], CurrentSize, Accum);
 commands_to_bytes([{string, String}|T], CurrentSize, Accum) ->
   [Size, String] = convert_string(String),
   commands_to_bytes(T, CurrentSize + size(Size) + size(String), [[Size, String]|Accum]).

@@ -1,7 +1,28 @@
+%% Copyright (c) 2009 Electronic Arts, Inc.
+
+%% Permission is hereby granted, free of charge, to any person obtaining a copy
+%% of this software and associated documentation files (the "Software"), to deal
+%% in the Software without restriction, including without limitation the rights
+%% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+%% copies of the Software, and to permit persons to whom the Software is
+%% furnished to do so, subject to the following conditions:
+%%
+%% The above copyright notice and this permission notice shall be included in
+%% all copies or substantial portions of the Software.
+%%
+%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+%% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+%% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+%% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+%% THE SOFTWARE.
+
 -module(giza_update).
 
 -include("giza.hrl").
 
+-compile([export_all]).
 -export([new/1, new/3, fields/1, add_field/2, add_fields/2, remove_field/2]).
 -export([docs/1, add_doc/3, remove_doc/2]).
 -export([host/1, host/2, port/1, port/2]).
@@ -60,8 +81,9 @@ add_doc(#giza_update{fields=Fields, updates=Updates}=Update, DocId, Attributes) 
 remove_doc(#giza_update{updates=Updates}=Update, DocId) when is_number(DocId) ->
   Update#giza_update{updates=proplists:delete(DocId, Updates)}.
 
-to_bytes(#giza_update{index=Index, updates=Updates}=_Update) ->
-  ok.
+to_bytes(Update) ->
+  Commands = to_commands(Update),
+  giza_protocol:commands_to_bytes(Commands).
 
 %% @spec host(Update) -> Result
 %%       Update = any()
@@ -108,3 +130,25 @@ clean_updates(FieldPos, [{DocId, Values}|T], Accum) ->
     false ->
       clean_updates(FieldPos, T, [{DocId, lists:flatten([Before, After])}|Accum])
   end.
+
+to_commands(Update) ->
+  lists:flatten([{string, Update#giza_update.index},
+                 process_attributes(Update#giza_update.fields),
+                 {32, length(Update#giza_update.updates)},
+                 process_updates(Update#giza_update.updates)]).
+
+process_attributes(Attributes) ->
+  [{32, length(Attributes)},
+   lists:map(fun(A) -> {string, A} end, Attributes)].
+
+process_updates([]) ->
+  [{32, 0}];
+process_updates(Updates) ->
+  process_updates(Updates, []).
+
+process_updates([], Accum) ->
+  lists:flatten(lists:reverse(Accum));
+process_updates([{DocId, Updates}|T], Accum) ->
+  PU = lists:reverse(lists:foldl(fun(U, Acc) -> [{32, U}|Acc] end,
+                                 [{64, DocId}], Updates)),
+  process_updates(T, [PU|Accum]).
