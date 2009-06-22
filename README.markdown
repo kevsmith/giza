@@ -46,5 +46,13 @@ Coming soon:
     Q1 = giza_query:add_filter(Q, "user_type", true, [1,3,5]),
     Results = giza_request:send(Q1)
 </pre>
+5. Updating a Sphinx index using giza:
+<pre>
+  U = giza_update:new("users"),
+  U1 = giza_update:add_field(U, "user_type"),
+  U2 = giza_update:add_doc(U1, 12345, [1]),
+  %% Returns number of docs updated
+  giza_request:send(U2),
+</pre>
 
 Thanks to Nick Gerakines and the folks at EA for supporting giza!
