@@ -40,10 +40,32 @@ parse_query(Sock) ->
   end.
 
 parse_update(Sock) ->
-  giza_protocol:read_number(Sock, 32).
+  case giza_protocol:read_number(Sock, 16) of
+    ?SEARCHD_OK ->
+      {ok, parse_update_results(Sock)};
+    ?SEARCHD_WARN ->
+      {Warning, Updated} = parse_update_warning(Sock),
+      {warning, Warning, Updated};
+    ?SEARCHD_ERR ->
+      {error, giza_protocol:read_lp_string(Sock)}
+  end.
 
 %% @hidden
 %% Internal functions
+parse_update_results(Sock) ->
+  %% throw away version number for now
+  giza_protocol:read_number(Sock, 16),
+  giza_protocol:read_number(Sock, 32),
+  giza_protocol:read_number(Sock, 32).
+
+parse_update_warning(Sock) ->
+  %% throw away version number for now
+  giza_protocol:read_number(Sock, 16),
+  giza_protocol:read_number(Sock, 32),
+  Warning = giza_protocol:read_lp_string(Sock),
+  Updates = giza_protocol:read_number(Sock, 32),
+  {Warning, Updates}.
+
 parse_results(Sock) ->
   _Fields = giza_protocol:map(fun(S) -> giza_protocol:read_lp_string(S) end, Sock),
   Attrs = giza_protocol:map(fun(S) -> {giza_protocol:read_lp_string(S),
