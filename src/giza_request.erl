@@ -29,7 +29,7 @@
 
 %% @spec send(Query) -> Result
 %%       Query = any()
-%%       Result = [{number(), [any()]}]
+%%       Result = {ok, any()} | {warning, any()} | {error, any()}
 %% @doc Sends a giza query to a searchd server
 send(#giza_query{host=Host, port=Port}=Query) ->
   case connect(Host, Port) of
