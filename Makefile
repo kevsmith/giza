@@ -1,3 +1,4 @@
+LIBDIR=`erl -eval 'io:format("~s~n", [code:lib_dir()])' -s init stop -noshell`
 PKGNAME=giza
 VERSION=0.1.0
 
@@ -12,6 +13,11 @@ include:
 
 compile: ebin include
 	cd src;erl -make
+	cp src/giza.app ebin
+
+install:
+	mkdir -p $(prefix)/$(LIBDIR)/$(PKGNAME)-$(VERSION)/{ebin,include}
+	for i in ebin/*.beam include/*.hrl; do install $$i $(prefix)/$(LIBDIR)/$(PKGNAME)-$(VERSION)/$$i ; done
 
 test: compile
 	cd t;erl -make
