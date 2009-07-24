@@ -1,6 +1,6 @@
 LIBDIR=`erl -eval 'io:format("~s~n", [code:lib_dir()])' -s init stop -noshell`
 PKGNAME=giza
-VERSION=0.1.0
+VERSION=0.2.0
 
 all: test docs
 
