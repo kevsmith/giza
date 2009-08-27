@@ -23,7 +23,7 @@
 -include("giza.hrl").
 
 -compile([export_all]).
--export([new/1, new/3, fields/1, add_field/2, add_fields/2, remove_field/2]).
+-export([new/1, new/3, attributes/1, add_attribute/2, add_attributes/2, remove_attribute/2]).
 -export([docs/1, add_doc/3, remove_doc/2]).
 -export([host/1, host/2, port/1, port/2]).
 -export([to_bytes/1]).
@@ -35,33 +35,33 @@ new(IndexName, Host, Port) when is_list(Host),
                                 is_number(Port) ->
   #giza_update{index=IndexName, host=Host, port=Port}.
 
-fields(#giza_update{fields=Fields}=_Update) ->
+attributes(#giza_update{attributes=Fields}=_Update) ->
   Fields.
 
-add_field(Update, FieldName) when is_list(FieldName) ->
-  add_field(Update, list_to_binary(FieldName));
-add_field(#giza_update{fields=Fields}=Update, FieldName) ->
+add_attribute(Update, FieldName) when is_list(FieldName) ->
+  add_attribute(Update, list_to_binary(FieldName));
+add_attribute(#giza_update{attributes=Fields}=Update, FieldName) ->
   case giza_util:index(Fields, FieldName) of
     -1 ->
-      Update#giza_update{fields=lists:flatten([Fields, FieldName])};
+      Update#giza_update{attributes=lists:flatten([Fields, FieldName])};
     _ ->
       Update
   end.
 
-add_fields(Update, FieldNames) ->
+add_attributes(Update, FieldNames) ->
   lists:foldl(fun(Field, U) ->
-                  add_field(U, Field) end,
+                  add_attribute(U, Field) end,
               Update,
               FieldNames).
 
-remove_field(Update, FieldName) when is_list(FieldName) ->
-  remove_field(Update, list_to_binary(FieldName));
-remove_field(#giza_update{fields=Fields, updates=Updates}=Update, FieldName) ->
+remove_attribute(Update, FieldName) when is_list(FieldName) ->
+  remove_attribute(Update, list_to_binary(FieldName));
+remove_attribute(#giza_update{attributes=Fields, updates=Updates}=Update, FieldName) ->
   case giza_util:index(Fields, FieldName) of
     -1 ->
       Update;
     FieldPos ->
-      Update#giza_update{fields=lists:filter(fun(F) -> not(F =:= FieldName) =:= true end,
+      Update#giza_update{attributes=lists:filter(fun(F) -> not(F =:= FieldName) =:= true end,
                                              Fields),
                          updates=clean_updates(FieldPos, Updates)}
   end.
@@ -69,7 +69,7 @@ remove_field(#giza_update{fields=Fields, updates=Updates}=Update, FieldName) ->
 docs(#giza_update{updates=Updates}=_Update) ->
   Updates.
 
-add_doc(#giza_update{fields=Fields, updates=Updates}=Update, DocId, Attributes) when is_number(DocId),
+add_doc(#giza_update{attributes=Fields, updates=Updates}=Update, DocId, Attributes) when is_number(DocId),
                                                                                             is_list(Attributes) ->
   if
     length(Attributes) == length(Fields) ->
@@ -133,7 +133,7 @@ clean_updates(FieldPos, [{DocId, Values}|T], Accum) ->
 
 to_commands(Update) ->
   lists:flatten([{string, Update#giza_update.index},
-                 process_attributes(Update#giza_update.fields),
+                 process_attributes(Update#giza_update.attributes),
                  {32, length(Update#giza_update.updates)},
                  process_updates(Update#giza_update.updates)]).
 

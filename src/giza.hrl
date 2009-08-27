@@ -69,5 +69,5 @@
          index=?EMPTY_STRING,
          command=?SPHINX_COMMAND_UPDATE,
          command_version,
-         fields=[],
+         attributes=[],
          updates=[]}).

@@ -9,12 +9,14 @@ giza currently supports the following features:
 - Index updates
 - Pagination via query limit and offset
 - Document id ranges via min_id and max_id
+- Updating document attributes
 
-Coming soon:
-
+To Do:
 - Excerpt support
 - Support for more query fields
 - Generic Sphinx test harness
+
+Patches are always welcome ;-)
 
 ## Examples
 
@@ -51,7 +53,7 @@ Coming soon:
 5. Updating a Sphinx index using giza:
 <pre>
   U = giza_update:new("users"),
-  U1 = giza_update:add_field(U, "user_type"),
+  U1 = giza_update:add_attribute(U, "user_type"),
   U2 = giza_update:add_doc(U1, 12345, [1]),
   %% Returns number of docs updated
   giza_request:send(U2),
