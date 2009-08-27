@@ -12,6 +12,7 @@ giza currently supports the following features:
 - Updating document attributes
 
 To Do:
+
 - Excerpt support
 - Support for more query fields
 - Generic Sphinx test harness
