@@ -40,8 +40,8 @@ doc:
 docs:	doc doc/*.html
 
 doc/*.html:
-	erl -eval 'edoc:files(["./src/giza_datetime.erl","./src/giza_query.erl","./src/giza_request.erl",\
-			       "./src/giza_response.erl","./src/giza_protocol.erl"])' -noshell -s init stop
+	erl -eval 'edoc:files(["./src/giza_datetime.erl","./src/giza_query.erl","./src/giza_request.erl","./src/giza_response.erl","./src/giza_protocol.erl"])'\
+	 -noshell -s init stop
 	mv *.html erlang.png stylesheet.css edoc-info doc
 clean:
 	rm -f *.tgz *.tar.gz edoc-info *.html erlang.png erl_crash.dump
