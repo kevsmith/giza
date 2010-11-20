@@ -237,14 +237,14 @@ remove_filter(#giza_query{filters=Filters}=Query, Name) when is_binary(Name) ->
 %%       Result = list(tuple())
 %% @doc Use index weights for query
 index_weights(Query, IndexWeights) ->
-	set_query_field(index_weights, Query, IndexWeights).
+    set_query_field(index_weights, Query, IndexWeights).
 
 %% @spec index_weights(Query) -> Result
 %%       Query = any()
 %%       Result = list(tuple())
 %% @doc Get index weights for query.
 index_weights(Query) ->
-	Query#giza_query.index_weights.
+    Query#giza_query.index_weights.
 
 to_bytes(Query) ->
   Commands = query_to_commands(Query),
@@ -348,8 +348,8 @@ encode_filters([{Name, {Exclude, Values}}|T], Accum) ->
 process_index_weights(#giza_query{index_weights=[]}) ->
 	[{32, 0}];
 process_index_weights(#giza_query{index_weights=IndexWeights}) ->
-	EncodedPairs = lists:foldl(
-		fun({K, V}, Acc) -> [{string, K}, {32, V} | Acc] end,
-		[],
-		IndexWeights),
-	[{32, lists:length(IndexWeights)} | EncodedPairs].
+    EncodedPairs = lists:foldl(
+        fun({K, V}, Acc) -> [{string, K}, {32, V} | Acc] end,
+        [],
+        IndexWeights),
+    [{32, lists:length(IndexWeights)} | EncodedPairs].
