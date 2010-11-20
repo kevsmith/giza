@@ -369,44 +369,41 @@ process_filters(#giza_query{filters=Filters}=_Query) ->
 encode_filters([], []) ->
   [{32, 0}];
 encode_filters([], Accum) ->
-  lists:flatten([{32, length(Accum)},
-                 lists:reverse(Accum)]);
+  lists:flatten([{32, length(Accum)}, lists:reverse(Accum)]);
 encode_filters([{Type, Name, Exclude, Spec}|T], Accum) ->
   EV = if
-         Exclude =:= true ->
-                1;
-         Exclude =:= false ->
-           0
-       end,
+    Exclude =:= true -> 1;
+    Exclude =:= false -> 0
+  end,
   EncodedFilter = case Type of
-      value -> 
-          Values = Spec,
-          [{string, Name},
-           {32, ?SPHINX_FILTER_VALUES},
-           {32, length(Values)},
-           lists:map(fun(V) -> {32, V} end, Values),
-           {32, EV}];
-      range ->
-          {Min, Max} = Spec,
-          [{string, Name},
-           {32, ?SPHINX_FILTER_RANGE},
-           {32, Min},
-           {32, Max},
-           {32, EV}]
+    value -> 
+      Values = Spec,
+      [{string, Name},
+        {32, ?SPHINX_FILTER_VALUES},
+        {32, length(Values)},
+        lists:map(fun(V) -> {32, V} end, Values),
+        {32, EV}];
+    range ->
+      {Min, Max} = Spec,
+      [{string, Name},
+        {32, ?SPHINX_FILTER_RANGE},
+        {32, Min},
+        {32, Max},
+        {32, EV}]
     end,
   encode_filters(T, [EncodedFilter|Accum]).
 
 process_index_weights(#giza_query{index_weights=IndexWeights}) ->
-    process_weights(IndexWeights).
+  process_weights(IndexWeights).
 
 process_field_weights(#giza_query{field_weights=FieldWeights}) ->
-    process_weights(FieldWeights).
+  process_weights(FieldWeights).
 
 process_weights([]) ->
 	[{32, 0}];
 process_weights(Weights) ->
-    EncodedPairs = lists:foldl(
-        fun({K, V}, Acc) -> [{string, K}, {32, V} | Acc] end,
-        [],
-        Weights),
-    [{32, lists:length(Weights)} | EncodedPairs].
+  EncodedPairs = lists:foldl(
+    fun({K, V}, Acc) -> [{string, K}, {32, V} | Acc] end,
+    [],
+    Weights),
+  [{32, lists:length(Weights)} | EncodedPairs].
