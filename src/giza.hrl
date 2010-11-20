@@ -62,6 +62,7 @@
          query_string=?EMPTY_STRING,
          filters=[],
          index_weights=[],
+         field_weights=[],
          ranker}).
 
 -record(giza_update,

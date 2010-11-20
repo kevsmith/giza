@@ -33,6 +33,7 @@
 -export([max_id/1, max_id/2]).
 -export([filters/1, add_filter/3, add_filter/4, remove_filter/2]).
 -export([index_weights/1, index_weights/2]).
+-export([field_weights/1, field_weights/2]).
 -export([to_bytes/1]).
 
 %% @spec new() -> Result
@@ -246,6 +247,20 @@ index_weights(Query, IndexWeights) ->
 index_weights(Query) ->
     Query#giza_query.index_weights.
 
+%% @spec field_weights(Query) -> Result
+%%       Query = any()
+%%       Result = list(tuple())
+%% @doc Use field weights for query
+field_weights(Query, FieldWeights) ->
+    set_query_field(field_weights, Query, FieldWeights).
+
+%% @spec field_weights(Query) -> Result
+%%       Query = any()
+%%       Result = list(tuple())
+%% @doc Get field weights for query.
+field_weights(Query) ->
+    Query#giza_query.field_weights.
+
 to_bytes(Query) ->
   Commands = query_to_commands(Query),
   giza_protocol:commands_to_bytes(Commands).
@@ -317,7 +332,7 @@ query_to_commands(Query) ->
                  %% Max query time -- essentially unlimited
                  {32, 0},
                  %% Field weights
-                 {32, 0},
+                 process_field_weights(Query),
                  %% Comment
                  {string, ?EMPTY_STRING}]).
 
@@ -345,11 +360,17 @@ encode_filters([{Name, {Exclude, Values}}|T], Accum) ->
                    {32, EV}],
   encode_filters(T, [EncodedFilter|Accum]).
 
-process_index_weights(#giza_query{index_weights=[]}) ->
-	[{32, 0}];
 process_index_weights(#giza_query{index_weights=IndexWeights}) ->
+    process_weights(IndexWeights).
+
+process_field_weights(#giza_query{field_weights=FieldWeights}) ->
+    process_weights(FieldWeights).
+
+process_weights([]) ->
+	[{32, 0}];
+process_weights(Weights) ->
     EncodedPairs = lists:foldl(
         fun({K, V}, Acc) -> [{string, K}, {32, V} | Acc] end,
         [],
-        IndexWeights),
-    [{32, lists:length(IndexWeights)} | EncodedPairs].
+        Weights),
+    [{32, lists:length(Weights)} | EncodedPairs].
