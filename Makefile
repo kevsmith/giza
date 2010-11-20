@@ -20,13 +20,13 @@ install:
 	for i in ebin/*.beam include/*.hrl; do install $$i $(prefix)/$(LIBDIR)/$(PKGNAME)-$(VERSION)/$$i ; done
 
 test: compile
-	cd t;erl -make
-	prove t/*.t
+	cd tests;erl -make
+	prove tests/*.t
 
 integration: compile
 	@echo !!! These tests require searchd to be running on localhost !!!
-	cd t;erl -make
-	prove t/*.integ
+	cd tests;erl -make
+	prove tests/*.integ
 
 package: clean
 	mkdir ebin
