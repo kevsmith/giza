@@ -13,7 +13,7 @@ include:
 
 compile: ebin include
 	cd src;erl -make
-	cp src/giza.app ebin
+	cp src/giza.app.src ebin/giza.app
 
 install:
 	mkdir -p $(prefix)/$(LIBDIR)/$(PKGNAME)-$(VERSION)/{ebin,include}
