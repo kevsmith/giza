@@ -31,7 +31,8 @@
 -export([index/1, index/2, limit/1, limit/2]).
 -export([offset/1, offset/2, min_id/1, min_id/2]).
 -export([max_id/1, max_id/2]).
--export([filters/1, add_filter/3, add_filter/4, remove_filter/2]).
+-export([filters/1, add_filter/3, add_filter/4, remove_filter/2,
+         add_filter_range/4, add_filter_range/5]).
 -export([index_weights/1, index_weights/2]).
 -export([field_weights/1, field_weights/2]).
 -export([to_bytes/1]).
@@ -218,10 +219,35 @@ add_filter(Query, Name, Values) ->
 %% @doc Add a new filter to a query
 add_filter(Query, Name, Exclude, Values) when is_list(Name) ->
   add_filter(Query, list_to_binary(Name), Exclude, Values);
-add_filter(#giza_query{filters=Filters}=Query, Name, Exclude, Values) when is_binary(Name),
-                                                                           Exclude =:= true orelse
-                                                                           Exclude =:= false ->
-  Query#giza_query{filters=[{Name, {Exclude, Values}}|Filters]}.
+add_filter(#giza_query{filters=Filters}=Query, Name, Exclude, Values)
+    when is_binary(Name),
+    Exclude =:= true orelse Exclude =:= false ->
+  Query#giza_query{filters=[{value, Name, Exclude, Values}|Filters]}.
+
+%% @spec add_filter_range(Query, Name, Min, Max) -> Result
+%%       Query = any()
+%%       Name = list() | binary()
+%%       Min = int()
+%%       Max = int()
+%%       Result = any()
+%% @doc Adds a inclusionary range filter
+add_filter_range(Query, Name, Min, Max) ->
+  add_filter_range(Query, Name, false, Min, Max).
+%% @spec add_filter_range(Query, Name, Exclude, Min, Max) -> Result
+%%       Query = any()
+%%       Name = list()
+%%       Exclude = true | false
+%%       Min = int()
+%%       Max = int()
+%%       Result = any()
+%% @doc Add a new filter to a query
+add_filter_range(Query, Name, Exclude, Min, Max)
+    when is_list(Name) ->
+  add_filter_range(Query, list_to_binary(Name), Exclude, Min, Max);
+add_filter_range(#giza_query{filters=Filters}=Query, Name, Exclude, Min, Max)
+    when is_binary(Name),
+    Exclude =:= true orelse Exclude =:= false ->
+  Query#giza_query{filters=[{range, Name, Exclude, {Min, Max}}|Filters]}.
 
 %% @spec remove_filter(Query, Name) -> Result
 %%       Query = any()
@@ -345,19 +371,29 @@ encode_filters([], []) ->
 encode_filters([], Accum) ->
   lists:flatten([{32, length(Accum)},
                  lists:reverse(Accum)]);
-encode_filters([{Name, {Exclude, Values}}|T], Accum) ->
+encode_filters([{Type, Name, Exclude, Spec}|T], Accum) ->
   EV = if
          Exclude =:= true ->
                 1;
          Exclude =:= false ->
            0
        end,
-  EncodedFilter = [{string, Name},
-                   {32, ?SPHINX_FILTER_VALUES},
-                   {32, length(Values)},
-                   lists:map(fun(V) ->
-                                 {32, V} end, Values),
-                   {32, EV}],
+  EncodedFilter = case Type of
+      value -> 
+          Values = Spec,
+          [{string, Name},
+           {32, ?SPHINX_FILTER_VALUES},
+           {32, length(Values)},
+           lists:map(fun(V) -> {32, V} end, Values),
+           {32, EV}];
+      range ->
+          {Min, Max} = Spec,
+          [{string, Name},
+           {32, ?SPHINX_FILTER_RANGE},
+           {32, Min},
+           {32, Max},
+           {32, EV}]
+    end,
   encode_filters(T, [EncodedFilter|Accum]).
 
 process_index_weights(#giza_query{index_weights=IndexWeights}) ->
