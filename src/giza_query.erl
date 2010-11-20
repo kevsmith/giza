@@ -32,6 +32,7 @@
 -export([offset/1, offset/2, min_id/1, min_id/2]).
 -export([max_id/1, max_id/2]).
 -export([filters/1, add_filter/3, add_filter/4, remove_filter/2]).
+-export([index_weights/1, index_weights/2]).
 -export([to_bytes/1]).
 
 %% @spec new() -> Result
@@ -231,6 +232,20 @@ remove_filter(Query, Name) when is_list(Name) ->
 remove_filter(#giza_query{filters=Filters}=Query, Name) when is_binary(Name) ->
   Query#giza_query{filters=proplists:delete(Name, Filters)}.
 
+%% @spec index_weights(Query) -> Result
+%%       Query = any()
+%%       Result = list(tuple())
+%% @doc Use index weights for query
+index_weights(Query, IndexWeights) ->
+	set_query_field(index_weights, Query, IndexWeights).
+
+%% @spec index_weights(Query) -> Result
+%%       Query = any()
+%%       Result = list(tuple())
+%% @doc Get index weights for query.
+index_weights(Query) ->
+	Query#giza_query.index_weights.
+
 to_bytes(Query) ->
   Commands = query_to_commands(Query),
   giza_protocol:commands_to_bytes(Commands).
@@ -261,7 +276,9 @@ set_query_field(min_id, Query, MinId) ->
 set_query_field(max_id, Query, MaxId) ->
   Query#giza_query{max_id=MaxId};
 set_query_field(offset, Query, Offset) ->
-  Query#giza_query{offset=Offset}.
+  Query#giza_query{offset=Offset};
+set_query_field(index_weights, Query, IndexWeights) ->
+  Query#giza_query{index_weights=IndexWeights}.
 
 query_to_commands(Query) ->
   lists:flatten([{32, 1}, %% Number of queries
@@ -296,7 +313,7 @@ query_to_commands(Query) ->
                  %% Disable geo searching
                  {32, 0},
                  %% Index weights
-                 {32, 0},
+                 process_index_weights(Query),
                  %% Max query time -- essentially unlimited
                  {32, 0},
                  %% Field weights
@@ -327,3 +344,12 @@ encode_filters([{Name, {Exclude, Values}}|T], Accum) ->
                                  {32, V} end, Values),
                    {32, EV}],
   encode_filters(T, [EncodedFilter|Accum]).
+
+process_index_weights(#giza_query{index_weights=[]}) ->
+	[{32, 0}];
+process_index_weights(#giza_query{index_weights=IndexWeights}) ->
+	EncodedPairs = lists:foldl(
+		fun({K, V}, Acc) -> [{string, K}, {32, V} | Acc] end,
+		[],
+		IndexWeights),
+	[{32, lists:length(IndexWeights)} | EncodedPairs].
