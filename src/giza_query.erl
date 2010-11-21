@@ -319,7 +319,9 @@ set_query_field(max_id, Query, MaxId) ->
 set_query_field(offset, Query, Offset) ->
   Query#giza_query{offset=Offset};
 set_query_field(index_weights, Query, IndexWeights) ->
-  Query#giza_query{index_weights=IndexWeights}.
+  Query#giza_query{index_weights=IndexWeights};
+set_query_field(field_weights, Query, FieldWeights) ->
+  Query#giza_query{field_weights=FieldWeights}.
 
 query_to_commands(Query) ->
   lists:flatten([{32, 1}, %% Number of queries
