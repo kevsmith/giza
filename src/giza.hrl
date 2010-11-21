@@ -73,3 +73,14 @@
          command_version,
          attributes=[],
          updates=[]}).
+
+-record(giza_query_result,
+        {matches=[],
+         attrs=[],
+         fields=[],
+         words=[],
+         total=0,
+         total_found=0,
+         time=0,
+         status=0,
+         warning=[]}).
