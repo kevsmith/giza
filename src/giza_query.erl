@@ -406,4 +406,4 @@ process_weights(Weights) ->
     fun({K, V}, Acc) -> [{string, K}, {32, V} | Acc] end,
     [],
     Weights),
-  [{32, lists:length(Weights)} | EncodedPairs].
+  [{32, length(Weights)} | EncodedPairs].
