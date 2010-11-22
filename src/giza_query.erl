@@ -319,6 +319,8 @@ new_with_defaults() ->
 
 set_query_field(mode, Query, MatchMode) ->
   Query#giza_query{mode=MatchMode};
+set_query_field(sort, Query, SortMode) ->
+  Query#giza_query{sort=SortMode};
 set_query_field(sort_by, Query, SortBy) ->
   Query#giza_query{sort_by=SortBy};
 set_query_field(query_string, Query, QueryString) ->
