@@ -31,6 +31,7 @@
 -export([index/1, index/2, limit/1, limit/2]).
 -export([offset/1, offset/2, min_id/1, min_id/2]).
 -export([max_id/1, max_id/2]).
+-export([sort_extended/2, sort_relevance/1]).
 -export([filters/1, add_filter/3, add_filter/4, remove_filter/2,
          add_filter_range/4, add_filter_range/5]).
 -export([index_weights/1, index_weights/2]).
@@ -194,6 +195,22 @@ max_id(Query) ->
 %% @doc Set the maximum doc id limit
 max_id(Query, MaxId) ->
   set_query_field(max_id, Query, MaxId).
+
+%% @spec sort_extended(Query, Expression) -> Result
+%%       Query = any()
+%%       Expression = string()
+%%       Result = any()
+%% @doc Sort result by specified expression
+sort_extended(Query, Expression) ->
+  Q1 = set_query_field(sort, Query, ?SPHINX_SORT_EXTENDED),
+  set_query_field(sort_by, Q1, Expression).
+
+%% @spec sort_relevance(Query) -> Result
+%%       Query = any()
+%%       Result = any()
+%% @doc Sort result by relevance
+sort_relevance(Query) ->
+  set_query_field(sort, Query, ?SPHINX_SORT_RELEVANCE).
 
 %% @spec filters(Query) -> Result
 %%       Query = any()
