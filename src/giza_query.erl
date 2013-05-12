@@ -31,7 +31,11 @@
 -export([index/1, index/2, limit/1, limit/2]).
 -export([offset/1, offset/2, min_id/1, min_id/2]).
 -export([max_id/1, max_id/2]).
--export([filters/1, add_filter/3, add_filter/4, remove_filter/2]).
+-export([sort_extended/2, sort_relevance/1]).
+-export([filters/1, add_filter/3, add_filter/4, remove_filter/2,
+         add_filter_range/4, add_filter_range/5]).
+-export([index_weights/1, index_weights/2]).
+-export([field_weights/1, field_weights/2]).
 -export([to_bytes/1]).
 
 %% @spec new() -> Result
@@ -192,6 +196,22 @@ max_id(Query) ->
 max_id(Query, MaxId) ->
   set_query_field(max_id, Query, MaxId).
 
+%% @spec sort_extended(Query, Expression) -> Result
+%%       Query = any()
+%%       Expression = string()
+%%       Result = any()
+%% @doc Sort result by specified expression
+sort_extended(Query, Expression) ->
+  Q1 = set_query_field(sort, Query, ?SPHINX_SORT_EXTENDED),
+  set_query_field(sort_by, Q1, Expression).
+
+%% @spec sort_relevance(Query) -> Result
+%%       Query = any()
+%%       Result = any()
+%% @doc Sort result by relevance
+sort_relevance(Query) ->
+  set_query_field(sort, Query, ?SPHINX_SORT_RELEVANCE).
+
 %% @spec filters(Query) -> Result
 %%       Query = any()
 %%       Result = list(tuple())
@@ -216,10 +236,35 @@ add_filter(Query, Name, Values) ->
 %% @doc Add a new filter to a query
 add_filter(Query, Name, Exclude, Values) when is_list(Name) ->
   add_filter(Query, list_to_binary(Name), Exclude, Values);
-add_filter(#giza_query{filters=Filters}=Query, Name, Exclude, Values) when is_binary(Name),
-                                                                           Exclude =:= true orelse
-                                                                           Exclude =:= false ->
-  Query#giza_query{filters=[{Name, {Exclude, Values}}|Filters]}.
+add_filter(#giza_query{filters=Filters}=Query, Name, Exclude, Values)
+    when is_binary(Name),
+    Exclude =:= true orelse Exclude =:= false ->
+  Query#giza_query{filters=[{value, Name, Exclude, Values}|Filters]}.
+
+%% @spec add_filter_range(Query, Name, Min, Max) -> Result
+%%       Query = any()
+%%       Name = list() | binary()
+%%       Min = int()
+%%       Max = int()
+%%       Result = any()
+%% @doc Adds a inclusionary range filter
+add_filter_range(Query, Name, Min, Max) ->
+  add_filter_range(Query, Name, false, Min, Max).
+%% @spec add_filter_range(Query, Name, Exclude, Min, Max) -> Result
+%%       Query = any()
+%%       Name = list()
+%%       Exclude = true | false
+%%       Min = int()
+%%       Max = int()
+%%       Result = any()
+%% @doc Add a new filter to a query
+add_filter_range(Query, Name, Exclude, Min, Max)
+    when is_list(Name) ->
+  add_filter_range(Query, list_to_binary(Name), Exclude, Min, Max);
+add_filter_range(#giza_query{filters=Filters}=Query, Name, Exclude, Min, Max)
+    when is_binary(Name),
+    Exclude =:= true orelse Exclude =:= false ->
+  Query#giza_query{filters=[{range, Name, Exclude, {Min, Max}}|Filters]}.
 
 %% @spec remove_filter(Query, Name) -> Result
 %%       Query = any()
@@ -230,6 +275,34 @@ remove_filter(Query, Name) when is_list(Name) ->
   remove_filter(Query, list_to_binary(Name));
 remove_filter(#giza_query{filters=Filters}=Query, Name) when is_binary(Name) ->
   Query#giza_query{filters=proplists:delete(Name, Filters)}.
+
+%% @spec index_weights(Query) -> Result
+%%       Query = any()
+%%       Result = list(tuple())
+%% @doc Use index weights for query
+index_weights(Query, IndexWeights) ->
+    set_query_field(index_weights, Query, IndexWeights).
+
+%% @spec index_weights(Query) -> Result
+%%       Query = any()
+%%       Result = list(tuple())
+%% @doc Get index weights for query.
+index_weights(Query) ->
+    Query#giza_query.index_weights.
+
+%% @spec field_weights(Query) -> Result
+%%       Query = any()
+%%       Result = list(tuple())
+%% @doc Use field weights for query
+field_weights(Query, FieldWeights) ->
+    set_query_field(field_weights, Query, FieldWeights).
+
+%% @spec field_weights(Query) -> Result
+%%       Query = any()
+%%       Result = list(tuple())
+%% @doc Get field weights for query.
+field_weights(Query) ->
+    Query#giza_query.field_weights.
 
 to_bytes(Query) ->
   Commands = query_to_commands(Query),
@@ -246,6 +319,8 @@ new_with_defaults() ->
 
 set_query_field(mode, Query, MatchMode) ->
   Query#giza_query{mode=MatchMode};
+set_query_field(sort, Query, SortMode) ->
+  Query#giza_query{sort=SortMode};
 set_query_field(sort_by, Query, SortBy) ->
   Query#giza_query{sort_by=SortBy};
 set_query_field(query_string, Query, QueryString) ->
@@ -261,7 +336,11 @@ set_query_field(min_id, Query, MinId) ->
 set_query_field(max_id, Query, MaxId) ->
   Query#giza_query{max_id=MaxId};
 set_query_field(offset, Query, Offset) ->
-  Query#giza_query{offset=Offset}.
+  Query#giza_query{offset=Offset};
+set_query_field(index_weights, Query, IndexWeights) ->
+  Query#giza_query{index_weights=IndexWeights};
+set_query_field(field_weights, Query, FieldWeights) ->
+  Query#giza_query{field_weights=FieldWeights}.
 
 query_to_commands(Query) ->
   lists:flatten([{32, 1}, %% Number of queries
@@ -296,11 +375,11 @@ query_to_commands(Query) ->
                  %% Disable geo searching
                  {32, 0},
                  %% Index weights
-                 {32, 0},
+                 process_index_weights(Query),
                  %% Max query time -- essentially unlimited
                  {32, 0},
                  %% Field weights
-                 {32, 0},
+                 process_field_weights(Query),
                  %% Comment
                  {string, ?EMPTY_STRING}]).
 
@@ -311,19 +390,41 @@ process_filters(#giza_query{filters=Filters}=_Query) ->
 encode_filters([], []) ->
   [{32, 0}];
 encode_filters([], Accum) ->
-  lists:flatten([{32, length(Accum)},
-                 lists:reverse(Accum)]);
-encode_filters([{Name, {Exclude, Values}}|T], Accum) ->
+  lists:flatten([{32, length(Accum)}, lists:reverse(Accum)]);
+encode_filters([{Type, Name, Exclude, Spec}|T], Accum) ->
   EV = if
-         Exclude =:= true ->
-                1;
-         Exclude =:= false ->
-           0
-       end,
-  EncodedFilter = [{string, Name},
-                   {32, ?SPHINX_FILTER_VALUES},
-                   {32, length(Values)},
-                   lists:map(fun(V) ->
-                                 {32, V} end, Values),
-                   {32, EV}],
+    Exclude =:= true -> 1;
+    Exclude =:= false -> 0
+  end,
+  EncodedFilter = case Type of
+    value -> 
+      Values = Spec,
+      [{string, Name},
+        {32, ?SPHINX_FILTER_VALUES},
+        {32, length(Values)},
+        lists:map(fun(V) -> {32, V} end, Values),
+        {32, EV}];
+    range ->
+      {Min, Max} = Spec,
+      [{string, Name},
+        {32, ?SPHINX_FILTER_RANGE},
+        {32, Min},
+        {32, Max},
+        {32, EV}]
+    end,
   encode_filters(T, [EncodedFilter|Accum]).
+
+process_index_weights(#giza_query{index_weights=IndexWeights}) ->
+  process_weights(IndexWeights).
+
+process_field_weights(#giza_query{field_weights=FieldWeights}) ->
+  process_weights(FieldWeights).
+
+process_weights([]) ->
+	[{32, 0}];
+process_weights(Weights) ->
+  EncodedPairs = lists:foldl(
+    fun({K, V}, Acc) -> [{string, K}, {32, V} | Acc] end,
+    [],
+    Weights),
+  [{32, length(Weights)} | EncodedPairs].

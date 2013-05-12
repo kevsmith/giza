@@ -19,7 +19,8 @@
 %% THE SOFTWARE.
 
 % Protocol version
--define(SPHINX_MAJOR_PROTO, 1).
+% Now it is set to match Sphinx 0.9.9. Maybe we should remove it completely?
+-define(SPHINX_MAJOR_PROTO, 16777216).
 
 % Searchd response codes
 -define(SEARCHD_OK, 0).
